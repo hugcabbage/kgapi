@@ -1,4 +1,4 @@
-# Build and publish multi-arch Docker image from MakcRe/KuGouMusicApi to GitHub Packages (ghcr.io)
+# 构建并发布MakcRe/KuGouMusicApi的多架构Docker镜像到GitHub Packages
 name: Build and publish Docker image
 
 on:
@@ -7,7 +7,7 @@ on:
       - main
   workflow_dispatch:
 
-# 需要写 packages 权限以便发布到 GitHub Packages（ghcr.io）
+# 需要写packages权限以便发布到GitHub Packages
 permissions:
   contents: read
   packages: write
@@ -20,29 +20,24 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout kapi repository (this repo)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Checkout source repository (MakcRe/KuGouMusicApi)
         uses: actions/checkout@v4
         with:
           repository: MakcRe/KuGouMusicApi
           path: source
-          # 如果源仓库默认分支不是 main，请改这里的 ref 为相应分支或提交 sha
+          # 如果源仓库默认分支不是main，请改这里的ref为相应分支或提交sha
           ref: main
           fetch-depth: 0
 
       - name: Set up QEMU (for multi-arch emulation)
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Read version from package.json
         id: get_version
-        # 使用 Node 读取 package.json 的 version 字段并通过 GITHUB_OUTPUT 导出
+        # 使用node读取package.json的version字段并通过GITHUB_OUTPUT导出
         run: |
           VERSION=$(node -p "require('./source/package.json').version")
           if [ -z "$VERSION" ]; then
@@ -52,24 +47,24 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push multi-arch image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./source
-          # 如果源码中 Dockerfile 路径不同，请改为相应路径
+          # 如果源码中Dockerfile路径不同，请改为相应路径
           file: ./source/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/kapi:${{ steps.get_version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/kapi:v${{ steps.get_version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/kapi:latest
+            ghcr.io/${{ github.repository_owner }}/kgapi:${{ steps.get_version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/kgapi:v${{ steps.get_version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/kgapi:latest
           labels: |
             org.opencontainers.image.version=${{ steps.get_version.outputs.version }}
             org.opencontainers.image.source=https://github.com/MakcRe/KuGouMusicApi
@@ -77,6 +72,6 @@ jobs:
       - name: Output published image names
         run: |
           echo "Published images:"
-          echo " - ghcr.io/${{ github.repository_owner }}/kapi:${{ steps.get_version.outputs.version }}"
-          echo " - ghcr.io/${{ github.repository_owner }}/kapi:v${{ steps.get_version.outputs.version }}"
-          echo " - ghcr.io/${{ github.repository_owner }}/kapi:latest"
+          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:${{ steps.get_version.outputs.version }}"
+          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:v${{ steps.get_version.outputs.version }}"
+          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:latest"
