@@ -20,8 +20,8 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout source repository (MakcRe/KuGouMusicApi)
-        uses: actions/checkout@v4
+      - name: Checkout source repository
+        uses: actions/checkout@v6
         with:
           repository: MakcRe/KuGouMusicApi
           path: source
@@ -29,7 +29,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Set up QEMU (for multi-arch emulation)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -47,14 +47,14 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push multi-arch image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./source
           # 如果源码中Dockerfile路径不同，请改为相应路径
@@ -68,10 +68,3 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ steps.get_version.outputs.version }}
             org.opencontainers.image.source=https://github.com/MakcRe/KuGouMusicApi
-
-      - name: Output published image names
-        run: |
-          echo "Published images:"
-          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:${{ steps.get_version.outputs.version }}"
-          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:v${{ steps.get_version.outputs.version }}"
-          echo " - ghcr.io/${{ github.repository_owner }}/kgapi:latest"
