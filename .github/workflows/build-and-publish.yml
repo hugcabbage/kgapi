@@ -29,6 +29,10 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Patch Dockerfile to insert pnpm-workspace.yaml
+        run: |
+          sed -i '/RUN pnpm install/i RUN printf "allowBuilds:\\n  esbuild: true\\n" > pnpm-workspace.yaml' source/Dockerfile
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
