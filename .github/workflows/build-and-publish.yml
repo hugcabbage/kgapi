@@ -29,9 +29,24 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Patch Dockerfile to insert pnpm-workspace.yaml
+      - name: Add custom Dockerfile
         run: |
-          sed -i '/RUN pnpm install/i RUN printf "allowBuilds:\\n  esbuild: true\\n" > pnpm-workspace.yaml' source/Dockerfile
+          cd source/
+          cat > Dockerfile.custom << 'EOF'
+          FROM node:lts-alpine
+          RUN apk add --no-cache tini
+          RUN corepack enable
+          ENV NODE_ENV=production
+          WORKDIR /app
+          RUN chown node:node /app
+          COPY --chown=node:node package.json pnpm-lock.yaml ./
+          USER node
+          RUN pnpm install --prod --frozen-lockfile --ignore-scripts false
+          COPY --chown=node:node . ./
+          EXPOSE 3000
+          ENTRYPOINT ["/sbin/tini", "--"]
+          CMD ["node", "app.js"]
+          EOF
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -62,7 +77,7 @@ jobs:
         with:
           context: ./source
           # 如果源码中Dockerfile路径不同，请改为相应路径
-          file: ./source/Dockerfile
+          file: ./source/Dockerfile.custom
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
